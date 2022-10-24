@@ -26,8 +26,8 @@ function Viewers() {
   ];
   return (
     <Container>
-      {vieversImg.map(({ name, url }) => (
-        <Wrap>
+      {vieversImg.map(({ name, url }, index) => (
+        <Wrap key={index}>
           <img src={"/images/" + url} alt={name} />
         </Wrap>
       ))}

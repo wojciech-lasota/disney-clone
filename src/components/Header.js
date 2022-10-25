@@ -1,7 +1,54 @@
-import React from "react";
+import React, { useEffect } from "react";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
+import {
+  selectUserName,
+  selectUserPhoto,
+  setUserLogin,
+  setSignOut,
+} from "../features/user/UserSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { auth, provider } from "../firebase";
 
 function Header() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const userName = useSelector(selectUserName);
+  const userPhoto = useSelector(selectUserPhoto);
+
+  useEffect(() => {
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        dispatch(
+          setUserLogin({
+            name: user.displayName,
+            email: user.email,
+            photo: user.photoURL,
+          })
+        );
+        navigate("/");
+      }
+    });
+  }, []);
+
+  const signIn = () => {
+    auth.signInWithPopup(provider).then((result) => {
+      let user = result.user;
+      dispatch(
+        setUserLogin({
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL,
+        })
+      );
+    });
+  };
+  const signOut = () => {
+    auth.signOut().then(() => {
+      dispatch(setSignOut);
+      navigate("/login");
+    });
+  };
   const navMenuLinks = [
     { name: "HOME", icon: "home-icon.svg" },
     { name: "SEARCH", icon: "search-icon.svg" },
@@ -13,15 +60,23 @@ function Header() {
   return (
     <Nav>
       <Logo src="/images/logo.svg" />
-      <NavMenu>
-        {navMenuLinks.map(({ name, icon }, index) => (
-          <a href="#" key={index}>
-            <img src={"images/" + icon} alt={name + " icon"} />
-            <span>{name}</span>
-          </a>
-        ))}
-      </NavMenu>
-      <UserImg src="https://lh3.googleusercontent.com/ogw/AOh-ky0yr_alD7RtvFeHY30yDb8s9gxJvymhinPRNcOC=s32-c-mo" />
+      {!userName ? (
+        <LoginContainer>
+          <Login onClick={signIn}>Login</Login>
+        </LoginContainer>
+      ) : (
+        <>
+          <NavMenu>
+            {navMenuLinks.map(({ name, icon }, index) => (
+              <a href="#" key={index}>
+                <img src={"images/" + icon} alt={name + " icon"} />
+                <span>{name}</span>
+              </a>
+            ))}
+          </NavMenu>
+          <UserImg onClick={signOut} src={userPhoto} />
+        </>
+      )}
     </Nav>
   );
 }
@@ -88,4 +143,24 @@ const UserImg = styled.img`
   height: 48px;
   border-radius: 50%;
   cursor: pointer;
+`;
+const Login = styled.div`
+  border: 1px solid #f9f9f9;
+  padding: 10px 20px;
+  border-radius: 5px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background-color: rgba(0, 0, 0, 0.6);
+  transition: all 250ms ease 0s;
+  cursor: pointer;
+  &:hover {
+    background-color: #f9f9f9;
+    color: #000;
+    border-color: transparent;
+  }
+`;
+const LoginContainer = styled.div`
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
 `;
